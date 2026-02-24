@@ -45,6 +45,16 @@ MODELS = {
     "6": {"name": "Voice Cloning", "folder": "Qwen3-TTS-12Hz-0.6B-Base-8bit", "mode": "clone_manager", "output_subfolder": "Clones"},
 }
 
+# HuggingFace repo mapping (folder name -> repo ID)
+# All models are from mlx-community, except 0.6B VoiceDesign which doesn't exist yet
+HF_REPOS = {
+    "Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit": "mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit",
+    "Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit": "mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit",
+    "Qwen3-TTS-12Hz-1.7B-Base-8bit": "mlx-community/Qwen3-TTS-12Hz-1.7B-Base-8bit",
+    "Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit": "mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit",
+    "Qwen3-TTS-12Hz-0.6B-Base-8bit": "mlx-community/Qwen3-TTS-12Hz-0.6B-Base-8bit",
+}
+
 SPEAKER_MAP = {
     "English": ["Ryan", "Aiden", "Ethan", "Chelsie", "Serena", "Vivian"],
     "Chinese": ["Vivian", "Serena", "Uncle_Fu", "Dylan", "Eric"],
@@ -76,10 +86,37 @@ def make_temp_dir():
     return os.path.join(TEMP_DIR, f"temp_{int(time.time())}")
 
 
+def download_model(folder_name):
+    repo_id = HF_REPOS.get(folder_name)
+    if not repo_id:
+        print(f"Error: No download available for '{folder_name}'.")
+        return False
+
+    local_dir = os.path.join(MODELS_DIR, folder_name)
+    print(f"\nModel '{folder_name}' not found locally.")
+    print(f"Downloading from {repo_id} (this may take a while)...")
+
+    try:
+        subprocess.run(
+            ["hf", "download", "--local-dir", local_dir, repo_id],
+            check=True,
+            stdout=subprocess.DEVNULL,
+        )
+        print("Download complete.")
+        return True
+    except FileNotFoundError:
+        print("Error: 'hf' CLI not found. Install it with: pip install huggingface_hub[cli]")
+        return False
+    except subprocess.CalledProcessError:
+        print("Download failed. Check your internet connection and try again.")
+        return False
+
+
 def get_smart_path(folder_name):
     full_path = os.path.join(MODELS_DIR, folder_name)
     if not os.path.exists(full_path):
-        return None
+        if not download_model(folder_name):
+            return None
 
     snapshots_dir = os.path.join(full_path, "snapshots")
     if os.path.exists(snapshots_dir):

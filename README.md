@@ -44,32 +44,22 @@ pip install -r requirements.txt
 brew install ffmpeg
 ```
 
-### 2. Download models
+### 2. Models
 
-Pick the models you need from the table below. Click the link, then click "Download" on HuggingFace.
+Models are **downloaded automatically** when you select them for the first time. No manual setup needed.
 
-**Pro Models (1.7B) - Best Quality**
+If you prefer to download models manually beforehand, place them in the `models/` directory:
 
-| Model | Use Case | Download |
-|-------|----------|----------|
-| CustomVoice | Preset voices + emotion control | [Download](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit) |
-| VoiceDesign | Create voices from text description | [Download](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit) |
-| Base | Voice cloning from audio | [Download](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-1.7B-Base-8bit) |
+```bash
+# Pro Models (1.7B) - Best Quality
+hf download --local-dir models/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit
+hf download --local-dir models/Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit
+hf download --local-dir models/Qwen3-TTS-12Hz-1.7B-Base-8bit mlx-community/Qwen3-TTS-12Hz-1.7B-Base-8bit
 
-**Lite Models (0.6B) - Faster, Less RAM**
-
-| Model | Use Case | Download |
-|-------|----------|----------|
-| CustomVoice | Preset voices + emotion control | [Download](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit) |
-| VoiceDesign | Create voices from text description | [Download](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-0.6B-VoiceDesign-8bit) |
-| Base | Voice cloning from audio | [Download](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-0.6B-Base-8bit) |
-
-Put downloaded folders in `models/`:
-```
-models/
-├── Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit/
-├── Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit/
-└── Qwen3-TTS-12Hz-1.7B-Base-8bit/
+# Lite Models (0.6B) - Faster, Less RAM
+hf download --local-dir models/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit
+hf download --local-dir models/Qwen3-TTS-12Hz-0.6B-Base-8bit mlx-community/Qwen3-TTS-12Hz-0.6B-Base-8bit
+# Note: 0.6B VoiceDesign is not yet available as an MLX model
 ```
 
 ### 3. Run
