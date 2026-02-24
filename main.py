@@ -26,6 +26,7 @@ except ImportError:
 BASE_OUTPUT_DIR = os.path.join(os.getcwd(), "outputs")
 MODELS_DIR = os.path.join(os.getcwd(), "models")
 VOICES_DIR = os.path.join(os.getcwd(), "voices")
+TEMP_DIR = os.path.join(os.getcwd(), "temp")
 
 # Settings
 AUTO_PLAY = True
@@ -72,7 +73,7 @@ def clean_memory():
 
 
 def make_temp_dir():
-    return f"temp_{int(time.time())}"
+    return os.path.join(TEMP_DIR, f"temp_{int(time.time())}")
 
 
 def get_smart_path(folder_name):
@@ -160,7 +161,8 @@ def convert_audio_if_needed(input_path):
         except wave.Error:
             pass
 
-    temp_wav = os.path.join(os.getcwd(), f"temp_convert_{int(time.time())}.wav")
+    os.makedirs(TEMP_DIR, exist_ok=True)
+    temp_wav = os.path.join(TEMP_DIR, f"temp_convert_{int(time.time())}.wav")
     print(f"Converting '{ext}' to WAV...")
 
     cmd = ["ffmpeg", "-y", "-v", "error", "-i", input_path, 
@@ -433,6 +435,7 @@ def main_menu():
 if __name__ == "__main__":
     try:
         os.makedirs(BASE_OUTPUT_DIR, exist_ok=True)
+        os.makedirs(TEMP_DIR, exist_ok=True)
         while True:
             main_menu()
     except KeyboardInterrupt:
