@@ -1,61 +1,14 @@
-anyio==4.12.1
-audioop-lts==0.2.2
-audioread==3.1.0
-blobfile==3.1.0
-certifi==2026.1.4
-cffi==2.0.0
-charset-normalizer==3.4.4
-click==8.3.1
-decorator==5.2.1
-filelock==3.20.3
-fsspec==2026.1.0
-h11==0.16.0
-hf-xet==1.2.0
-httpcore==1.0.9
-httpx==0.28.1
-huggingface_hub==1.3.4
-idna==3.11
-Jinja2==3.1.6
-joblib==1.5.3
-lazy_loader==0.4
-librosa==0.11.0
-llvmlite==0.46.0
-lxml==6.0.2
-MarkupSafe==3.0.3
-miniaudio==1.61
-mlx==0.30.3
-mlx-audio @ git+https://github.com/Blaizzy/mlx-audio.git@9349644ccbd62eb10900852228f7b952c566def3
-mlx-lm==0.30.5
-mlx-metal==0.30.3
-msgpack==1.1.2
-numba==0.63.1
-numpy==2.3.5
-packaging==26.0
-platformdirs==4.5.1
-pooch==1.8.2
-protobuf==6.33.4
-pycparser==3.0
-pycryptodomex==3.23.0
-pyloudnorm==0.2.0
-PyYAML==6.0.3
-regex==2026.1.15
-requests==2.32.5
-safetensors==0.7.0
-scikit-learn==1.8.0
-scipy==1.17.0
-sentencepiece==0.2.1
-shellingham==1.5.4
-sounddevice==0.5.3
-soundfile==0.13.1
-soxr==1.0.0
-standard-aifc==3.13.0
-standard-chunk==3.13.0
-standard-sunau==3.13.0
-threadpoolctl==3.6.0
-tiktoken==0.12.0
-tokenizers==0.22.2
-tqdm==4.67.1
-transformers==5.0.0rc3
-typer-slim==0.21.1
-typing_extensions==4.15.0
-urllib3==2.6.3
+# Requires Python >= 3.13  (Apple Silicon / MLX)
+#
+# Install:
+#   python3.13 -m venv .venv
+#   source .venv/bin/activate
+#   pip install -r requirements.txt
+
+# Core TTS framework for Apple Silicon – pulls in mlx, mlx-lm, mlx-metal,
+# transformers, huggingface-hub, librosa, soundfile, sounddevice, etc.
+mlx-audio @ git+https://github.com/Blaizzy/mlx-audio.git
+
+# Makes Python use the macOS native trust store instead of OpenSSL's CA bundle.
+# Required in corporate environments with SSL-inspecting proxies (e.g. Zscaler).
+truststore
