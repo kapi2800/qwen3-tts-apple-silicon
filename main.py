@@ -438,7 +438,7 @@ def run_clone_manager(model_key):
     lang_code = pick_language()
 
     while True:
-        text = get_safe_input(f"\nText for '{os.path.basename(str(ref_audio))}' (or 'exit'): ")
+        text = get_safe_input(f"\nText for '{os.path.basename(str(ref_audio))}' (or path to .txt file, or 'exit'): ")
         if text is None:
             break
         print("Cloning...")
