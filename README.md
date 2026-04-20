@@ -50,34 +50,27 @@ brew install ffmpeg
 > **Note:** Python 3.13 is required. Check with `python3.13 --version`.  
 > Install it via Homebrew if needed: `brew install python@3.13`
 
-### 2. Download models
+### 2. Run
 
-Use the `hf` CLI (installed automatically with the dependencies) to download models straight into the right folder:
+Models are **downloaded automatically on first use** from HuggingFace and cached in `~/.cache/huggingface/hub/`. No manual download step is needed — just run the app and select a model.
 
-**Pro Models (1.7B) — Best Quality**
+If you want to pre-download a model before going offline (optional):
 
-| Model | Use Case | Download command |
-|-------|----------|-----------------|
-| CustomVoice | Preset voices + emotion control | `hf download --local-dir models/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit` |
-| VoiceDesign | Create voices from text description | `hf download --local-dir models/Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit` |
-| Base | Voice cloning from audio | `hf download --local-dir models/Qwen3-TTS-12Hz-1.7B-Base-8bit mlx-community/Qwen3-TTS-12Hz-1.7B-Base-8bit` |
-
-**Lite Models (0.6B) — Faster, Less RAM**
-
-| Model | Use Case | Download command |
-|-------|----------|-----------------|
-| CustomVoice | Preset voices + emotion control | `hf download --local-dir models/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit` |
-| VoiceDesign | Create voices from text description | `hf download --local-dir models/Qwen3-TTS-12Hz-0.6B-VoiceDesign-8bit mlx-community/Qwen3-TTS-12Hz-0.6B-VoiceDesign-8bit` |
-| Base | Voice cloning from audio | `hf download --local-dir models/Qwen3-TTS-12Hz-0.6B-Base-8bit mlx-community/Qwen3-TTS-12Hz-0.6B-Base-8bit` |
-
-You only need to download the models you plan to use. Downloaded folders go in `models/`:
-
+```bash
+# Downloads into the HF cache — shared across all projects, no duplication
+hf download mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit
 ```
-models/
-├── Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit/
-├── Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit/
-└── Qwen3-TTS-12Hz-1.7B-Base-8bit/
-```
+
+Available models:
+
+| Key | Model | Use Case | Cache size |
+|-----|-------|----------|------------|
+| 1 | Pro 1.7B — Custom Voice | Preset voices + emotion control | ~2.2 GB |
+| 2 | Pro 1.7B — Voice Design | Create voices from text description | ~2.2 GB |
+| 3 | Pro 1.7B — Voice Cloning | Clone from audio | ~2.2 GB |
+| 4 | Lite 0.6B — Custom Voice | Preset voices + emotion control | ~0.6 GB |
+| 5 | Lite 0.6B — Voice Design | Create voices from text description | ~0.6 GB |
+| 6 | Lite 0.6B — Voice Cloning | Clone from audio | ~0.6 GB |
 
 ### 3. Run
 
@@ -144,7 +137,7 @@ Select:
 | Issue | Fix |
 |-------|-----|
 | `mlx_audio not found` | Run `source .venv/bin/activate` first |
-| `Model not found` | Check model folder names match exactly |
+| Model download fails / hangs | Check your internet connection. On corporate networks see the SSL row below. |
 | Audio won't play | Check macOS sound output settings |
 | `SSL certificate verify failed` (corporate network / Zscaler) | `truststore` is installed automatically and injects the macOS native trust store. If downloads still fail, check that the Zscaler Root CA is trusted in **Keychain Access → System**. |
 | `Python 3.13+ required` error | Install with `brew install python@3.13`, then recreate the venv: `python3.13 -m venv .venv` |

@@ -31,24 +31,25 @@ except ImportError:
 
 # Configuration
 BASE_OUTPUT_DIR = os.path.join(os.getcwd(), "outputs")
-MODELS_DIR = os.path.join(os.getcwd(), "models")
 VOICES_DIR = os.path.join(os.getcwd(), "voices")
+# Models are loaded directly from the HuggingFace cache (~/.cache/huggingface/hub/).
+# They are downloaded automatically on first use.
 
 # Settings
 AUTO_PLAY = True
 SAMPLE_RATE = 24000
 FILENAME_MAX_LEN = 20
 
-# Model Definitions
+# Model Definitions — HuggingFace repo IDs (downloaded and cached automatically)
 MODELS = {
     # Pro (1.7B)
-    "1": {"name": "Custom Voice", "folder": "Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit", "mode": "custom", "output_subfolder": "CustomVoice"},
-    "2": {"name": "Voice Design", "folder": "Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit", "mode": "design", "output_subfolder": "VoiceDesign"},
-    "3": {"name": "Voice Cloning", "folder": "Qwen3-TTS-12Hz-1.7B-Base-8bit", "mode": "clone_manager", "output_subfolder": "Clones"},
+    "1": {"name": "Custom Voice", "repo": "mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit", "mode": "custom", "output_subfolder": "CustomVoice"},
+    "2": {"name": "Voice Design", "repo": "mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit", "mode": "design", "output_subfolder": "VoiceDesign"},
+    "3": {"name": "Voice Cloning", "repo": "mlx-community/Qwen3-TTS-12Hz-1.7B-Base-8bit", "mode": "clone_manager", "output_subfolder": "Clones"},
     # Lite (0.6B)
-    "4": {"name": "Custom Voice", "folder": "Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit", "mode": "custom", "output_subfolder": "CustomVoice"},
-    "5": {"name": "Voice Design", "folder": "Qwen3-TTS-12Hz-0.6B-VoiceDesign-8bit", "mode": "design", "output_subfolder": "VoiceDesign"},
-    "6": {"name": "Voice Cloning", "folder": "Qwen3-TTS-12Hz-0.6B-Base-8bit", "mode": "clone_manager", "output_subfolder": "Clones"},
+    "4": {"name": "Custom Voice", "repo": "mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit", "mode": "custom", "output_subfolder": "CustomVoice"},
+    "5": {"name": "Voice Design", "repo": "mlx-community/Qwen3-TTS-12Hz-0.6B-VoiceDesign-8bit", "mode": "design", "output_subfolder": "VoiceDesign"},
+    "6": {"name": "Voice Cloning", "repo": "mlx-community/Qwen3-TTS-12Hz-0.6B-Base-8bit", "mode": "clone_manager", "output_subfolder": "Clones"},
 }
 
 SPEAKER_MAP = {
@@ -127,19 +128,6 @@ def clean_memory():
 def make_temp_dir():
     return f"temp_{int(time.time())}"
 
-
-def get_smart_path(folder_name):
-    full_path = os.path.join(MODELS_DIR, folder_name)
-    if not os.path.exists(full_path):
-        return None
-
-    snapshots_dir = os.path.join(full_path, "snapshots")
-    if os.path.exists(snapshots_dir):
-        subfolders = [f for f in os.listdir(snapshots_dir) if not f.startswith('.')]
-        if subfolders:
-            return os.path.join(snapshots_dir, subfolders[0])
-
-    return full_path
 
 
 def save_audio_file(temp_folder, subfolder, text_snippet):
@@ -277,14 +265,10 @@ def enroll_new_voice():
 
 def run_custom_session(model_key):
     info = MODELS[model_key]
-    model_path = get_smart_path(info["folder"])
-    if not model_path:
-        print("Error: Model not found.")
-        return
 
-    print(f"\nLoading {info['name']}...")
+    print(f"\nLoading {info['name']} ({info['repo']})...")
     try:
-        model = load_model(model_path)
+        model = load_model(info["repo"])
     except Exception as e:
         print(f"Load failed: {e}")
         return
@@ -338,14 +322,10 @@ def run_custom_session(model_key):
 
 def run_design_session(model_key):
     info = MODELS[model_key]
-    model_path = get_smart_path(info["folder"])
-    if not model_path:
-        print("Error: Model not found.")
-        return
 
-    print(f"\nLoading {info['name']}...")
+    print(f"\nLoading {info['name']} ({info['repo']})...")
     try:
-        model = load_model(model_path)
+        model = load_model(info["repo"])
     except Exception as e:
         print(f"Load failed: {e}")
         return
@@ -386,14 +366,10 @@ def run_clone_manager(model_key):
         return
 
     info = MODELS[model_key]
-    model_path = get_smart_path(info["folder"])
-    if not model_path:
-        print("Error: Model not found.")
-        return
 
-    print("\nLoading Base Model...")
+    print(f"\nLoading Base Model ({info['repo']})...")
     try:
-        model = load_model(model_path)
+        model = load_model(info["repo"])
     except Exception as e:
         print(f"Load failed: {e}")
         return
