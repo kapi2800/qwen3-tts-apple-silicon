@@ -1,5 +1,12 @@
-import os
 import sys
+
+if sys.version_info < (3, 13):
+    sys.exit(
+        f"Error: Python 3.13+ is required (got {sys.version_info.major}.{sys.version_info.minor}).\n"
+        "Create the venv with: python3.13 -m venv .venv"
+    )
+
+import os
 import shutil
 import time
 import wave
@@ -24,24 +31,25 @@ except ImportError:
 
 # Configuration
 BASE_OUTPUT_DIR = os.path.join(os.getcwd(), "outputs")
-MODELS_DIR = os.path.join(os.getcwd(), "models")
 VOICES_DIR = os.path.join(os.getcwd(), "voices")
+# Models are loaded directly from the HuggingFace cache (~/.cache/huggingface/hub/).
+# They are downloaded automatically on first use.
 
 # Settings
 AUTO_PLAY = True
 SAMPLE_RATE = 24000
 FILENAME_MAX_LEN = 20
 
-# Model Definitions
+# Model Definitions — HuggingFace repo IDs (downloaded and cached automatically)
 MODELS = {
     # Pro (1.7B)
-    "1": {"name": "Custom Voice", "folder": "Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit", "mode": "custom", "output_subfolder": "CustomVoice"},
-    "2": {"name": "Voice Design", "folder": "Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit", "mode": "design", "output_subfolder": "VoiceDesign"},
-    "3": {"name": "Voice Cloning", "folder": "Qwen3-TTS-12Hz-1.7B-Base-8bit", "mode": "clone_manager", "output_subfolder": "Clones"},
+    "1": {"name": "Custom Voice", "repo": "mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit", "mode": "custom", "output_subfolder": "CustomVoice"},
+    "2": {"name": "Voice Design", "repo": "mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit", "mode": "design", "output_subfolder": "VoiceDesign"},
+    "3": {"name": "Voice Cloning", "repo": "mlx-community/Qwen3-TTS-12Hz-1.7B-Base-8bit", "mode": "clone_manager", "output_subfolder": "Clones"},
     # Lite (0.6B)
-    "4": {"name": "Custom Voice", "folder": "Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit", "mode": "custom", "output_subfolder": "CustomVoice"},
-    "5": {"name": "Voice Design", "folder": "Qwen3-TTS-12Hz-0.6B-VoiceDesign-8bit", "mode": "design", "output_subfolder": "VoiceDesign"},
-    "6": {"name": "Voice Cloning", "folder": "Qwen3-TTS-12Hz-0.6B-Base-8bit", "mode": "clone_manager", "output_subfolder": "Clones"},
+    "4": {"name": "Custom Voice", "repo": "mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit", "mode": "custom", "output_subfolder": "CustomVoice"},
+    "5": {"name": "Voice Design", "repo": "mlx-community/Qwen3-TTS-12Hz-0.6B-VoiceDesign-8bit", "mode": "design", "output_subfolder": "VoiceDesign"},
+    "6": {"name": "Voice Cloning", "repo": "mlx-community/Qwen3-TTS-12Hz-0.6B-Base-8bit", "mode": "clone_manager", "output_subfolder": "Clones"},
 }
 
 SPEAKER_MAP = {
@@ -51,12 +59,58 @@ SPEAKER_MAP = {
     "Korean": ["Sohee"]
 }
 
+SUPPORTED_LANGUAGES = [
+    ("English",    "en"),
+    ("German",     "de"),
+    ("Chinese",    "zh"),
+    ("Japanese",   "ja"),
+    ("Korean",     "ko"),
+    ("French",     "fr"),
+    ("Spanish",    "es"),
+    ("Italian",    "it"),
+    ("Portuguese", "pt"),
+    ("Russian",    "ru"),
+]
+
+# Maps SPEAKER_MAP language groups to BCP-47 codes for auto-detection
+LANG_CODE_MAP = {
+    "English":  "en",
+    "Chinese":  "zh",
+    "Japanese": "ja",
+    "Korean":   "ko",
+}
+
 EMOTION_EXAMPLES = [
     "Sad and crying, speaking slowly",
     "Excited and happy, speaking very fast",
     "Angry and shouting",
     "Whispering quietly"
 ]
+
+
+def pick_language(default="en"):
+    """Show a numbered language menu and return the chosen lang_code.
+
+    Pressing Enter keeps the default. Accepts a valid number from the list.
+    """
+    default_name = next((n for n, c in SUPPORTED_LANGUAGES if c == default), default)
+    print(f"\nLanguage (default: {default_name}):")
+    for i, (name, code) in enumerate(SUPPORTED_LANGUAGES, 1):
+        marker = " *" if code == default else ""
+        print(f"  {i:2}. {name} ({code}){marker}")
+    choice = input("Select number (Enter = keep default): ").strip()
+    if not choice:
+        return default
+    try:
+        idx = int(choice) - 1
+        if 0 <= idx < len(SUPPORTED_LANGUAGES):
+            name, code = SUPPORTED_LANGUAGES[idx]
+            print(f"Language: {name} ({code})")
+            return code
+    except ValueError:
+        pass
+    print(f"Invalid choice, using default: {default_name} ({default})")
+    return default
 
 
 def flush_input():
@@ -74,19 +128,6 @@ def clean_memory():
 def make_temp_dir():
     return f"temp_{int(time.time())}"
 
-
-def get_smart_path(folder_name):
-    full_path = os.path.join(MODELS_DIR, folder_name)
-    if not os.path.exists(full_path):
-        return None
-
-    snapshots_dir = os.path.join(full_path, "snapshots")
-    if os.path.exists(snapshots_dir):
-        subfolders = [f for f in os.listdir(snapshots_dir) if not f.startswith('.')]
-        if subfolders:
-            return os.path.join(snapshots_dir, subfolders[0])
-
-    return full_path
 
 
 def save_audio_file(temp_folder, subfolder, text_snippet):
@@ -224,14 +265,10 @@ def enroll_new_voice():
 
 def run_custom_session(model_key):
     info = MODELS[model_key]
-    model_path = get_smart_path(info["folder"])
-    if not model_path:
-        print("Error: Model not found.")
-        return
 
-    print(f"\nLoading {info['name']}...")
+    print(f"\nLoading {info['name']} ({info['repo']})...")
     try:
-        model = load_model(model_path)
+        model = load_model(info["repo"])
     except Exception as e:
         print(f"Load failed: {e}")
         return
@@ -242,11 +279,15 @@ def run_custom_session(model_key):
     print("Available Speakers: " + ", ".join(all_speakers))
 
     user_choice = input("\nSelect Speaker (Name): ").strip()
+    detected_lang_code = "en"
     for lang, names in SPEAKER_MAP.items():
         if user_choice in names:
             speaker = user_choice
+            detected_lang_code = LANG_CODE_MAP.get(lang, "en")
             break
     print(f"Using: {speaker}")
+
+    lang_code = pick_language(default=detected_lang_code)
 
     print("\nEmotion Examples:")
     for ex in EMOTION_EXAMPLES:
@@ -271,8 +312,8 @@ def run_custom_session(model_key):
         print("Generating...")
         temp_dir = make_temp_dir()
         try:
-            generate_audio(model=model, text=text, voice=speaker, 
-                         instruct=base_instruct, speed=speed, output_path=temp_dir)
+            generate_audio(model=model, text=text, voice=speaker,
+                         instruct=base_instruct, speed=speed, lang_code=lang_code, output_path=temp_dir)
             save_audio_file(temp_dir, info["output_subfolder"], text)
         except Exception as e:
             print(f"Error: {e}")
@@ -281,14 +322,10 @@ def run_custom_session(model_key):
 
 def run_design_session(model_key):
     info = MODELS[model_key]
-    model_path = get_smart_path(info["folder"])
-    if not model_path:
-        print("Error: Model not found.")
-        return
 
-    print(f"\nLoading {info['name']}...")
+    print(f"\nLoading {info['name']} ({info['repo']})...")
     try:
-        model = load_model(model_path)
+        model = load_model(info["repo"])
     except Exception as e:
         print(f"Load failed: {e}")
         return
@@ -298,6 +335,8 @@ def run_design_session(model_key):
     if not instruct:
         return
 
+    lang_code = pick_language()
+
     while True:
         text = get_safe_input()
         if text is None:
@@ -305,7 +344,7 @@ def run_design_session(model_key):
         print("Generating...")
         temp_dir = make_temp_dir()
         try:
-            generate_audio(model=model, text=text, instruct=instruct, output_path=temp_dir)
+            generate_audio(model=model, text=text, instruct=instruct, lang_code=lang_code, output_path=temp_dir)
             save_audio_file(temp_dir, info["output_subfolder"], text)
         except Exception as e:
             print(f"Error: {e}")
@@ -327,14 +366,10 @@ def run_clone_manager(model_key):
         return
 
     info = MODELS[model_key]
-    model_path = get_smart_path(info["folder"])
-    if not model_path:
-        print("Error: Model not found.")
-        return
 
-    print("\nLoading Base Model...")
+    print(f"\nLoading Base Model ({info['repo']})...")
     try:
-        model = load_model(model_path)
+        model = load_model(info["repo"])
     except Exception as e:
         print(f"Load failed: {e}")
         return
@@ -376,15 +411,17 @@ def run_clone_manager(model_key):
     else:
         return
 
+    lang_code = pick_language()
+
     while True:
-        text = get_safe_input(f"\nText for '{os.path.basename(str(ref_audio))}' (or 'exit'): ")
+        text = get_safe_input(f"\nText for '{os.path.basename(str(ref_audio))}' (or path to .txt file, or 'exit'): ")
         if text is None:
             break
         print("Cloning...")
         temp_dir = make_temp_dir()
         try:
-            generate_audio(model=model, text=text, ref_audio=ref_audio, 
-                         ref_text=ref_text, output_path=temp_dir)
+            generate_audio(model=model, text=text, ref_audio=ref_audio,
+                         ref_text=ref_text, lang_code=lang_code, output_path=temp_dir)
             save_audio_file(temp_dir, info["output_subfolder"], text)
         except Exception as e:
             print(f"Error: {e}")

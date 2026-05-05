@@ -11,7 +11,8 @@ Run **Qwen3-TTS** text-to-speech AI locally on your MacBook with Apple Silicon (
 - **Voice Cloning** - Clone any voice from a 5-second audio sample
 - **Voice Design** - Create new voices by describing them ("deep narrator", "excited child")
 - **Custom Voices** - 9 built-in voices with emotion and speed control
-- **100% Local** - Runs entirely on your Mac, no internet required
+- **Language Selection** - Choose output language (German, English, Chinese, Japanese, Korean, French, …) per session; auto-detected from speaker in Custom Voice mode
+- **100% Local** - Runs entirely on your Mac, no internet required after model download
 - **Optimized for M-Series** - Uses Apple's MLX framework for fast GPU inference
 
 ---
@@ -33,44 +34,43 @@ MLX runs natively on the Apple Neural Engine and GPU, meaning better performance
 
 ## Quick Start (5 Minutes)
 
-### 1. Clone and setup
+### 1. Clone and set up
 
 ```bash
-git clone https://github.com/kapi2800/qwen3-tts-apple-silicon.git
+git clone https://github.com/JuvGut/qwen3-tts-apple-silicon.git
 cd qwen3-tts-apple-silicon
-python3 -m venv .venv
+
+python3.13 -m venv .venv
 source .venv/bin/activate
+
 pip install -r requirements.txt
 brew install ffmpeg
 ```
 
-### 2. Download models
+> **Note:** Python 3.13 is required. Check with `python3.13 --version`.  
+> Install it via Homebrew if needed: `brew install python@3.13`
 
-Pick the models you need from the table below. Click the link, then click "Download" on HuggingFace.
+### 2. Run
 
-**Pro Models (1.7B) - Best Quality**
+Models are **downloaded automatically on first use** from HuggingFace and cached in `~/.cache/huggingface/hub/`. No manual download step is needed — just run the app and select a model.
 
-| Model | Use Case | Download |
-|-------|----------|----------|
-| CustomVoice | Preset voices + emotion control | [Download](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit) |
-| VoiceDesign | Create voices from text description | [Download](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit) |
-| Base | Voice cloning from audio | [Download](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-1.7B-Base-8bit) |
+If you want to pre-download a model before going offline (optional):
 
-**Lite Models (0.6B) - Faster, Less RAM**
-
-| Model | Use Case | Download |
-|-------|----------|----------|
-| CustomVoice | Preset voices + emotion control | [Download](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit) |
-| VoiceDesign | Create voices from text description | [Download](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-0.6B-VoiceDesign-8bit) |
-| Base | Voice cloning from audio | [Download](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-0.6B-Base-8bit) |
-
-Put downloaded folders in `models/`:
+```bash
+# Downloads into the HF cache — shared across all projects, no duplication
+hf download mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit
 ```
-models/
-├── Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit/
-├── Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit/
-└── Qwen3-TTS-12Hz-1.7B-Base-8bit/
-```
+
+Available models:
+
+| Key | Model | Use Case | Cache size |
+|-----|-------|----------|------------|
+| 1 | Pro 1.7B — Custom Voice | Preset voices + emotion control | ~2.2 GB |
+| 2 | Pro 1.7B — Voice Design | Create voices from text description | ~2.2 GB |
+| 3 | Pro 1.7B — Voice Cloning | Clone from audio | ~2.2 GB |
+| 4 | Lite 0.6B — Custom Voice | Preset voices + emotion control | ~0.6 GB |
+| 5 | Lite 0.6B — Voice Design | Create voices from text description | ~0.6 GB |
+| 6 | Lite 0.6B — Voice Cloning | Clone from audio | ~0.6 GB |
 
 ### 3. Run
 
@@ -102,12 +102,14 @@ python main.py
 
   q. Exit
 
-Select: 
+Select:
 ```
 
-- **Custom Voice**: Pick from preset speakers, set emotion and speed
-- **Voice Design**: Describe a voice (e.g., "calm British narrator")
-- **Voice Cloning**: Provide a reference audio clip to clone
+- **Custom Voice**: Pick from preset speakers, set emotion and speed. Language is auto-detected from the chosen speaker (e.g. Ryan → English, Ono_Anna → Japanese) and can be overridden.
+- **Voice Design**: Describe a voice (e.g., "calm British narrator"). You choose the output language from a numbered menu.
+- **Voice Cloning**: Provide a reference audio clip to clone. You choose the output language from a numbered menu.
+
+**Supported languages:** English, German, Chinese, Japanese, Korean, French, Spanish, Italian, Portuguese, Russian.
 
 ---
 
@@ -117,14 +119,16 @@ Select:
 - Voice cloning works best with clean 5-10 second audio clips
 - Speed options: Normal (1.0x), Fast (1.3x), Slow (0.8x)
 - Type `q` or `exit` anytime to go back
+- For German text, select **German (de)** in the language menu — this controls pronunciation, not just the speaker accent
 
 ---
 
 ## Requirements
 
 - macOS with Apple Silicon (M1/M2/M3/M4)
-- Python 3.10+
-- RAM: ~3GB for Lite models, ~6GB for Pro models
+- Python 3.13+
+- RAM: ~3 GB for Lite models, ~6 GB for Pro models
+- [ffmpeg](https://formulae.brew.sh/formula/ffmpeg) (for voice cloning audio conversion)
 
 ---
 
@@ -133,8 +137,10 @@ Select:
 | Issue | Fix |
 |-------|-----|
 | `mlx_audio not found` | Run `source .venv/bin/activate` first |
-| `Model not found` | Check model folder names match exactly |
+| Model download fails / hangs | Check your internet connection. On corporate networks see the SSL row below. |
 | Audio won't play | Check macOS sound output settings |
+| `SSL certificate verify failed` (corporate network / Zscaler) | `truststore` is installed automatically and injects the macOS native trust store. If downloads still fail, check that the Zscaler Root CA is trusted in **Keychain Access → System**. |
+| `Python 3.13+ required` error | Install with `brew install python@3.13`, then recreate the venv: `python3.13 -m venv .venv` |
 
 ---
 
@@ -150,7 +156,6 @@ Select:
 - [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) - Original Qwen3-TTS by Alibaba
 - [MLX Audio](https://github.com/Blaizzy/mlx-audio) - MLX framework for audio models
 - [MLX Community](https://huggingface.co/mlx-community) - Pre-converted MLX models
-
 
 ---
 
